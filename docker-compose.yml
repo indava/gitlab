@@ -1,0 +1,73 @@
+postgresql:
+  image: sameersbn/postgresql:9.4-3
+  environment:
+    - DB_USER=gitlab
+    - DB_PASS=password
+    - DB_NAME=gitlabhq_production
+  volumes:
+    - /home/docker/gitlab/postgresql:/var/lib/postgresql
+gitlab:
+  image: sameersbn/gitlab:8.9.5
+  links:
+    - redis:redisio
+    - postgresql:postgresql
+    - drone:drone.dev
+  ports:
+    - "10080:80"
+    - "10443:443"
+    - "2222:22"
+  environment:
+    - TZ=America/Mexico_City
+    - GITLAB_TIMEZONE=Kolkata
+
+    - GITLAB_SECRETS_DB_KEY_BASE=4BA
+
+    - GITLAB_HOST=domain.com
+    - GITLAB_PORT=443
+    - GITLAB_SSH_PORT=2222
+    - GITLAB_HTTPS=true
+    - SSL_SELF_SIGNED=true
+    - NGINX_HSTS_MAXAGE=2592000
+
+    - GITLAB_NOTIFY_ON_BROKEN_BUILDS=true
+    - GITLAB_NOTIFY_PUSHER=false
+
+    - GITLAB_EMAIL=notifications@example.com
+    - GITLAB_EMAIL_REPLY_TO=noreply@example.com
+    - GITLAB_INCOMING_EMAIL_ADDRESS=reply@example.com
+
+    - GITLAB_BACKUPS=daily
+    - GITLAB_BACKUP_TIME=01:00
+
+    - SMTP_ENABLED=true
+    - SMTP_DOMAIN=www.domain.com
+    - SMTP_HOST=smtp.gmail.com
+    - SMTP_PORT=587
+    - SMTP_USER=contacto@indava.com
+    - SMTP_PASS=secret
+    - SMTP_STARTTLS=true
+    - SMTP_AUTHENTICATION=login
+
+    - IMAP_ENABLED=false
+    - IMAP_HOST=imap.gmail.com
+    - IMAP_PORT=993
+    - IMAP_USER=mailer@example.com
+    - IMAP_PASS=password
+    - IMAP_SSL=true
+    - IMAP_STARTTLS=false
+  volumes:
+    - /home/gitlab/gitlab:/home/git/data
+redis:
+  image: sameersbn/redis:latest
+  volumes:
+    - /home/gitlab/redis:/var/lib/redis
+drone:
+  image: drone/drone:0.4.2
+  ports:
+    - "10081:8000"
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /home/gitlab/drone:/var/lib/drone
+  environment:
+    REMOTE_DRIVER: gitlab
+    REMOTE_CONFIG: https://www.domain.com?client_id=XYZ&client_secret=ABC&open=true
